@@ -1,0 +1,1981 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>全球幸福指数大数据分析平台</title>
+<!--设置是否为缩放模式 -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- 新 Bootstrap 核心 CSS 文件 --> 
+<link rel="stylesheet" type="text/css" href="https://www.jq22.com/jquery/bootstrap-3.3.4.css">
+<!-- jQuery文件。务必在bootstrap.min.js 之前引入 --> 
+<script src="https://www.jq22.com/jquery/jquery-1.10.2.js"></script>
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 --> 
+<script src="js/bootstrap.min.js"></script>
+<!--echarts JS-->
+<script src="https://cdn.bootcss.com/echarts/4.2.1-rc1/echarts.min.js"></script>
+<!--界面样式-->
+<script src="js/visual.js"></script>
+<script src="js/china.js"></script>
+<link rel="stylesheet" type="text/css" href="css/visual.css">
+
+<script src="js\echarts.min.js"></script>
+<script src="js\jquery-3.2.1.js"></script>
+<script src="https://fastly.jsdelivr.net/npm/jquery"></script>
+<script src="https://fastly.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+<script src="https://fastly.jsdelivr.net/npm/echarts-simple-transform/dist/ecSimpleTransform.min.js"></script>
+
+<script src="https://fastly.jsdelivr.net/npm/echarts@5.4.0/dist/extension/dataTool.min.js"></script>
+<script src="https://fastly.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+<script src="https://fastly.jsdelivr.net/npm/echarts-stat@latest/dist/ecStat.min.js"></script>
+<script src="https://fastly.jsdelivr.net/npm/echarts@4.9.0/map/js/china.js"></script>
+<script src="https://fastly.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"></script>
+
+
+</head>
+<body class="ksh", background="images\back.jpg" style="background-repeat:no-repeat;background-attachment:fixed;background-size:100% 100%; ">
+
+    <div class="visual">
+
+
+        <!-- 左边 -->
+        <div class="visual_left">
+            <!-- 左上 -->
+            <div class="visual_left_top">
+                <div class="visual_chart" id="World happiness Map"></div>
+            </div>
+            
+            <!-- 左下 -->
+            <div class="visual_left_bot">
+                <!-- 左下左 -->
+                <div class="visual_bot_box2">
+                    <div class="visual_chart" id="bar2"></div>
+                </div>
+                <!-- 左下右 -->
+                <div class="visual_bot_box1">
+                <div class="visual_chart" id="bar"></div>
+            </div>
+
+
+
+            </div>
+
+        </div>
+
+        <!-- 右边 -->
+        <div class="visual_right">
+            <!-- 右上 -->
+            <div class="visual_right_box">
+                <div class="visual_chart" id="main1"></div>
+            </div>
+            
+            <!-- 右下 -->
+            <div class="visual_right_box">
+                <!-- <div class="'visual_middle">
+                    <button type="button" onclick="sub1()">点我1!</button>
+                    <button type="button" onclick="">点我!</button>
+                    <button type="button" onclick="">点我!</button>
+                    <button type="button" onclick="">点我!</button>
+                    <button type="button" onclick="">点我!</button>
+                    <button type="button" onclick="">点我!</button>
+                </div> -->
+                <div class="visual_chart" id="container"></div>
+            </div>
+
+        </div>
+
+
+
+    </div>
+
+
+<!-- 堆叠图 -->
+    <script type="text/javascript">
+        //  注意顺序问题，如果前面的图无法导入成功，后面的本可以成功的也导入不了
+        //堆叠图
+        var myChart1 = echarts.init(document.getElementById('main1'));
+        myChart1.setOption(option1);
+        //选择属性表现表现对应的箱图
+    var myatrr='happiness_score'
+    function sub1(){
+        myatrr='family'
+    }
+    var dom = document.getElementById('container');
+    var myChart = echarts.init(dom, null, {
+      renderer: 'canvas',
+      useDirtyRect: false
+    });
+    var app = {};
+    var option;
+    
+    $.when(
+  $.getJSON('all.json'),
+  $.getScript(
+    'https://fastly.jsdelivr.net/npm/echarts-simple-transform/dist/ecSimpleTransform.min.js'
+  )
+).done(function (res) {
+    console.log(res);
+    _rawData=res[0];
+  run(myatrr);
+});
+// 关键点：添加点击事件（可选项 'click'、'dblclick'、'mousedown'、'mousemove'、'mouseup'、'mouseover'、'mouseout'、'globalout'、'contextmenu' ）
+myChart1.on('click', function (params) {
+        // params为点击事件的参数，里面的内容可以打印出来查看
+        console.log(params);
+        myatrr=params.seriesName;
+        run(myatrr);
+        });
+function run(myatrr) {
+    
+  echarts.registerTransform(ecSimpleTransform.aggregate);
+  option = {
+    dataset: [
+      {
+        id: 'raw',
+        source: _rawData
+      },
+      {
+        id: 'filter_year',
+        fromDatasetId: 'raw',
+        transform: [
+          {//筛选年份
+            type: 'filter',
+            config: {
+              dimension: 'Year',
+              value: 2015
+            }
+          }
+        ]
+      },
+      {
+        id: 'happiness_score_aggregate',
+        fromDatasetId: 'filter_year',
+        transform: [
+          {
+            type: 'ecSimpleTransform:aggregate',
+            config: {
+              resultDimensions: [
+                { name: 'min', from: myatrr, method: 'min' },
+                { name: 'Q1', from: myatrr, method: 'Q1' },
+                { name: 'median', from: myatrr, method: 'median' },
+                { name: 'Q3', from: myatrr, method: 'Q3' },
+                { name: 'max', from: myatrr, method: 'max' },
+                { name: 'continent', from: 'continent' }
+              ],
+              groupBy: 'continent'
+            }
+          },
+          {
+            type: 'sort',
+            config: {
+              dimension: 'Q3',
+              order: 'asc'
+            }
+          }
+        ]
+      }
+    ],
+    tooltip: {
+      trigger: 'axis',
+      confine: true
+    },
+    xAxis: {
+      name: myatrr,
+      nameLocation: 'middle',
+      nameGap: 30,
+      scale: true
+    },
+    yAxis: {
+      type: 'category'
+    },
+    grid: {
+        left:100,
+      bottom: 90
+    },
+    legend: {
+      selected: { detail: false }
+    },
+    dataZoom: [
+      {
+        type: 'inside'
+      },
+      {
+        type: 'slider',
+        height: 10
+      }
+    ],
+    series: [
+    {
+        name: 'detail',
+        type: 'scatter',
+        datasetId: 'filter_year',
+        symbolSize: 6,
+        tooltip: {
+          trigger: 'item'
+        },
+        itemStyle: {
+          color: '#d00000'
+        },
+        encode: {
+          x: myatrr,
+          y: 'continent',
+          label: 'Country',
+          tooltip: ['continent', 'Country', myatrr]
+        }
+      },
+      {
+        name: 'boxplot',
+        type: 'boxplot',
+        datasetId: 'happiness_score_aggregate',
+        itemStyle: {
+          color: '#b8c5f2'
+        },
+        encode: {
+          x: ['min', 'Q1', 'median', 'Q3', 'max'],
+          y: 'continent',
+          itemName: ['continent'],
+          tooltip: ['min', 'Q1', 'median', 'Q3', 'max']
+        }
+      },
+      
+    ]
+  };
+  myChart.setOption(option);
+}
+
+    if (option && typeof option === 'object') {
+      myChart.setOption(option);
+    }
+
+    window.addEventListener('resize', myChart.resize);
+    </script>
+
+
+
+<!-- 三图联动 -->
+<script type="text/javascript">  
+    // var app = {};
+    //var ROOT_PATH = 'https://i.postimg.cc';
+    var data =[
+    {
+        "name":"Norway",
+        "value":7.537000179,
+        "gdp_per_capita":1.616463184,
+        "family":1.53352356,
+        "health":0.796666503,
+        "freedom":0.635422587,
+        "generosity":0.362012237,
+        "government_trust":0.315963835,
+        "dystopia_residual":2.277026653
+    },
+    {
+        "name":"Denmark",
+        "value":7.521999836,
+        "gdp_per_capita":1.482383013,
+        "family":1.551121593,
+        "health":0.792565525,
+        "freedom":0.626006722,
+        "generosity":0.355280489,
+        "government_trust":0.400770068,
+        "dystopia_residual":2.313707352
+    },
+    {
+        "name":"Iceland",
+        "value":7.504000187,
+        "gdp_per_capita":1.48063302,
+        "family":1.610574007,
+        "health":0.833552122,
+        "freedom":0.627162635,
+        "generosity":0.475540221,
+        "government_trust":0.153526559,
+        "dystopia_residual":2.322715282
+    },
+    {
+        "name":"Switzerland",
+        "value":7.493999958,
+        "gdp_per_capita":1.564979553,
+        "family":1.516911745,
+        "health":0.858131289,
+        "freedom":0.620070577,
+        "generosity":0.290549278,
+        "government_trust":0.367007285,
+        "dystopia_residual":2.276716232
+    },
+    {
+        "name":"Finland",
+        "value":7.468999863,
+        "gdp_per_capita":1.443571925,
+        "family":1.540246725,
+        "health":0.80915767,
+        "freedom":0.617950857,
+        "generosity":0.245482773,
+        "government_trust":0.382611543,
+        "dystopia_residual":2.430181503
+    },
+    {
+        "name":"Netherlands",
+        "value":7.376999855,
+        "gdp_per_capita":1.503944635,
+        "family":1.428939223,
+        "health":0.810696125,
+        "freedom":0.585384488,
+        "generosity":0.47048983,
+        "government_trust":0.282661825,
+        "dystopia_residual":2.294804096
+    },
+    {
+        "name":"Canada",
+        "value":7.315999985,
+        "gdp_per_capita":1.479204416,
+        "family":1.481348991,
+        "health":0.834557652,
+        "freedom":0.611100912,
+        "generosity":0.435539722,
+        "government_trust":0.287371516,
+        "dystopia_residual":2.187264442
+    },
+    {
+        "name":"New Zealand",
+        "value":7.31400013,
+        "gdp_per_capita":1.405706048,
+        "family":1.548195124,
+        "health":0.816759706,
+        "freedom":0.61406213,
+        "generosity":0.500005126,
+        "government_trust":0.382816702,
+        "dystopia_residual":2.046456337
+    },
+    {
+        "name":"Sweden",
+        "value":7.28399992,
+        "gdp_per_capita":1.494387269,
+        "family":1.478162169,
+        "health":0.830875158,
+        "freedom":0.612924099,
+        "generosity":0.385399252,
+        "government_trust":0.384398729,
+        "dystopia_residual":2.097537994
+    },
+    {
+        "name":"Australia",
+        "value":7.28399992,
+        "gdp_per_capita":1.484414935,
+        "family":1.510041952,
+        "health":0.843886793,
+        "freedom":0.601607382,
+        "generosity":0.47769925,
+        "government_trust":0.30118373,
+        "dystopia_residual":2.065210819
+    },
+    {
+        "name":"Israel",
+        "value":7.212999821,
+        "gdp_per_capita":1.375382423,
+        "family":1.376289964,
+        "health":0.838404,
+        "freedom":0.405988604,
+        "generosity":0.330082655,
+        "government_trust":0.0852421,
+        "dystopia_residual":2.801757336
+    },
+    {
+        "name":"Costa Rica",
+        "value":7.078999996,
+        "gdp_per_capita":1.109706283,
+        "family":1.416403651,
+        "health":0.759509265,
+        "freedom":0.58013165,
+        "generosity":0.214613229,
+        "government_trust":0.100106589,
+        "dystopia_residual":2.898639202
+    },
+    {
+        "name":"Austria",
+        "value":7.006000042,
+        "gdp_per_capita":1.487097263,
+        "family":1.459944963,
+        "health":0.815328419,
+        "freedom":0.56776619,
+        "generosity":0.316472322,
+        "government_trust":0.221060365,
+        "dystopia_residual":2.138506413
+    },
+    {
+        "name":"United States",
+        "value":6.993000031,
+        "gdp_per_capita":1.546259284,
+        "family":1.419920564,
+        "health":0.774286628,
+        "freedom":0.505740523,
+        "generosity":0.392578781,
+        "government_trust":0.135638788,
+        "dystopia_residual":2.218113422
+    },
+    {
+        "name":"Ireland",
+        "value":6.977000237,
+        "gdp_per_capita":1.535706639,
+        "family":1.558231115,
+        "health":0.809782624,
+        "freedom":0.573110342,
+        "generosity":0.427858323,
+        "government_trust":0.298388153,
+        "dystopia_residual":1.773869038
+    },
+    {
+        "name":"Germany",
+        "value":6.951000214,
+        "gdp_per_capita":1.487923384,
+        "family":1.472520351,
+        "health":0.798950732,
+        "freedom":0.562511384,
+        "generosity":0.33626917,
+        "government_trust":0.276731938,
+        "dystopia_residual":2.015769958
+    },
+    {
+        "name":"Belgium",
+        "value":6.890999794,
+        "gdp_per_capita":1.463780761,
+        "family":1.462312698,
+        "health":0.818091869,
+        "freedom":0.539770722,
+        "generosity":0.231503338,
+        "government_trust":0.251343131,
+        "dystopia_residual":2.124210358
+    },
+    {
+        "name":"Luxembourg",
+        "value":6.862999916,
+        "gdp_per_capita":1.741943598,
+        "family":1.457583666,
+        "health":0.845089495,
+        "freedom":0.596627891,
+        "generosity":0.283180982,
+        "government_trust":0.318834424,
+        "dystopia_residual":1.619512081
+    },
+    {
+        "name":"United Kingdom",
+        "value":6.714000225,
+        "gdp_per_capita":1.44163394,
+        "family":1.49646008,
+        "health":0.805335939,
+        "freedom":0.508190036,
+        "generosity":0.492774159,
+        "government_trust":0.265428066,
+        "dystopia_residual":1.704143524
+    },
+    {
+        "name":"Chile",
+        "value":6.65199995,
+        "gdp_per_capita":1.25278461,
+        "family":1.284024954,
+        "health":0.819479704,
+        "freedom":0.376895279,
+        "generosity":0.326662421,
+        "government_trust":0.082287982,
+        "dystopia_residual":2.509585857
+    },
+    {
+        "name":"United Arab Emirates",
+        "value":6.647999763,
+        "gdp_per_capita":1.626343369,
+        "family":1.266410232,
+        "health":0.726798236,
+        "freedom":0.60834527,
+        "generosity":0.360941947,
+        "government_trust":0.324489564,
+        "dystopia_residual":1.734703541
+    },
+    {
+        "name":"Brazil",
+        "value":6.635000229,
+        "gdp_per_capita":1.10735321,
+        "family":1.431306005,
+        "health":0.616552353,
+        "freedom":0.437453747,
+        "generosity":0.162349895,
+        "government_trust":0.111092761,
+        "dystopia_residual":2.769267082
+    },
+    {
+        "name":"Argentina",
+        "value":6.598999977,
+        "gdp_per_capita":1.185295463,
+        "family":1.440451145,
+        "health":0.695137084,
+        "freedom":0.494519204,
+        "generosity":0.109457061,
+        "government_trust":0.059739888,
+        "dystopia_residual":2.614005327
+    },
+    {
+        "name":"Mexico",
+        "value":6.578000069,
+        "gdp_per_capita":1.153183818,
+        "family":1.21086216,
+        "health":0.709978998,
+        "freedom":0.412730008,
+        "generosity":0.120990433,
+        "government_trust":0.132774115,
+        "dystopia_residual":2.837154865
+    },
+    {
+        "name":"Singapore",
+        "value":6.572000027,
+        "gdp_per_capita":1.69227767,
+        "family":1.353814363,
+        "health":0.949492395,
+        "freedom":0.549840569,
+        "generosity":0.345965981,
+        "government_trust":0.464307785,
+        "dystopia_residual":1.216362
+    },
+    {
+        "name":"Malta",
+        "value":6.52699995,
+        "gdp_per_capita":1.343279839,
+        "family":1.488411665,
+        "health":0.821944237,
+        "freedom":0.588767052,
+        "generosity":0.574730575,
+        "government_trust":0.153066069,
+        "dystopia_residual":1.556862831
+    },
+    {
+        "name":"Guatemala",
+        "value":6.453999996,
+        "gdp_per_capita":0.872001946,
+        "family":1.255585194,
+        "health":0.54023999,
+        "freedom":0.531310618,
+        "generosity":0.283488393,
+        "government_trust":0.077223279,
+        "dystopia_residual":2.893891096
+    },
+    {
+        "name":"Uruguay",
+        "value":6.453999996,
+        "gdp_per_capita":1.217559695,
+        "family":1.412227869,
+        "health":0.719216824,
+        "freedom":0.579392254,
+        "generosity":0.175096929,
+        "government_trust":0.178061873,
+        "dystopia_residual":2.172409534
+    },
+    {
+        "name":"Panama",
+        "value":6.452000141,
+        "gdp_per_capita":1.233748436,
+        "family":1.373192549,
+        "health":0.706156135,
+        "freedom":0.550026834,
+        "generosity":0.210556939,
+        "government_trust":0.070983924,
+        "dystopia_residual":2.307199955
+    },
+    {
+        "name":"France",
+        "value":6.441999912,
+        "gdp_per_capita":1.430923462,
+        "family":1.387776852,
+        "health":0.844465852,
+        "freedom":0.470222116,
+        "generosity":0.129762307,
+        "government_trust":0.172502428,
+        "dystopia_residual":2.005954742
+    },
+    {
+        "name":"Thailand",
+        "value":6.423999786,
+        "gdp_per_capita":1.127868772,
+        "family":1.425792456,
+        "health":0.647239029,
+        "freedom":0.580200732,
+        "generosity":0.57212311,
+        "government_trust":0.031612735,
+        "dystopia_residual":2.039508343
+    },
+    {
+        "name":"Spain",
+        "value":6.402999878,
+        "gdp_per_capita":1.384397864,
+        "family":1.532090902,
+        "health":0.8889606,
+        "freedom":0.40878123,
+        "generosity":0.190133572,
+        "government_trust":0.070914097,
+        "dystopia_residual":1.92775774
+    },
+    {
+        "name":"Colombia",
+        "value":6.356999874,
+        "gdp_per_capita":1.070622325,
+        "family":1.402182937,
+        "health":0.595027924,
+        "freedom":0.477487415,
+        "generosity":0.149014473,
+        "government_trust":0.046668742,
+        "dystopia_residual":2.616068125
+    },
+    {
+        "name":"Saudi Arabia",
+        "value":6.343999863,
+        "gdp_per_capita":1.530623555,
+        "family":1.286677599,
+        "health":0.59014833,
+        "freedom":0.449750572,
+        "generosity":0.147616014,
+        "government_trust":0.273432255,
+        "dystopia_residual":2.065429688
+    },
+    {
+        "name":"Kuwait",
+        "value":6.105000019,
+        "gdp_per_capita":1.632952452,
+        "family":1.259698749,
+        "health":0.632105708,
+        "freedom":0.496337593,
+        "generosity":0.228289798,
+        "government_trust":0.21515955,
+        "dystopia_residual":1.640425205
+    },
+    {
+        "name":"Slovakia",
+        "value":6.09800005,
+        "gdp_per_capita":1.325393558,
+        "family":1.505059242,
+        "health":0.712732911,
+        "freedom":0.295817465,
+        "generosity":0.136544481,
+        "government_trust":0.024210852,
+        "dystopia_residual":2.097776651
+    },
+    {
+        "name":"Bahrain",
+        "value":6.086999893,
+        "gdp_per_capita":1.488412261,
+        "family":1.323110461,
+        "health":0.653133035,
+        "freedom":0.536746919,
+        "generosity":0.172668487,
+        "government_trust":0.25704217,
+        "dystopia_residual":1.656149387
+    },
+    {
+        "name":"Malaysia",
+        "value":6.084000111,
+        "gdp_per_capita":1.29121542,
+        "family":1.284646034,
+        "health":0.618784428,
+        "freedom":0.402264982,
+        "generosity":0.41660893,
+        "government_trust":0.065600708,
+        "dystopia_residual":2.004448891
+    },
+    {
+        "name":"Nicaragua",
+        "value":6.071000099,
+        "gdp_per_capita":0.737299204,
+        "family":1.28721571,
+        "health":0.653095961,
+        "freedom":0.447551847,
+        "generosity":0.301674217,
+        "government_trust":0.130687982,
+        "dystopia_residual":2.513930559
+    },
+    {
+        "name":"Ecuador",
+        "value":6.007999897,
+        "gdp_per_capita":1.000820398,
+        "family":1.286168814,
+        "health":0.685636222,
+        "freedom":0.455198199,
+        "generosity":0.150112465,
+        "government_trust":0.140134647,
+        "dystopia_residual":2.290352583
+    },
+    {
+        "name":"El Salvador",
+        "value":6.002999783,
+        "gdp_per_capita":0.909784496,
+        "family":1.182125092,
+        "health":0.596018553,
+        "freedom":0.43245253,
+        "generosity":0.078257985,
+        "government_trust":0.08998096,
+        "dystopia_residual":2.714593887
+    },
+    {
+        "name":"Poland",
+        "value":5.97300005,
+        "gdp_per_capita":1.291787863,
+        "family":1.44571197,
+        "health":0.699475348,
+        "freedom":0.520342112,
+        "generosity":0.158465967,
+        "government_trust":0.059307806,
+        "dystopia_residual":1.797722816
+    },
+    {
+        "name":"Uzbekistan",
+        "value":5.971000195,
+        "gdp_per_capita":0.786441088,
+        "family":1.54896915,
+        "health":0.498272628,
+        "freedom":0.658248663,
+        "generosity":0.415983647,
+        "government_trust":0.246528223,
+        "dystopia_residual":1.816913605
+    },
+    {
+        "name":"Italy",
+        "value":5.964000225,
+        "gdp_per_capita":1.395066619,
+        "family":1.444923282,
+        "health":0.853144348,
+        "freedom":0.256450713,
+        "generosity":0.172789648,
+        "government_trust":0.028028091,
+        "dystopia_residual":1.813312054
+    },
+    {
+        "name":"Russia",
+        "value":5.962999821,
+        "gdp_per_capita":1.281778097,
+        "family":1.469282389,
+        "health":0.547349334,
+        "freedom":0.373783112,
+        "generosity":0.052263822,
+        "government_trust":0.032962881,
+        "dystopia_residual":2.205607414
+    },
+    {
+        "name":"Japan",
+        "value":5.920000076,
+        "gdp_per_capita":1.416915178,
+        "family":1.436337829,
+        "health":0.913475871,
+        "freedom":0.505625546,
+        "generosity":0.120572768,
+        "government_trust":0.163760737,
+        "dystopia_residual":1.363223553
+    },
+    {
+        "name":"Lithuania",
+        "value":5.90199995,
+        "gdp_per_capita":1.314582348,
+        "family":1.473516107,
+        "health":0.62894994,
+        "freedom":0.234231785,
+        "generosity":0.010164657,
+        "government_trust":0.011865643,
+        "dystopia_residual":2.228440523
+    },
+    {
+        "name":"Algeria",
+        "value":5.872000217,
+        "gdp_per_capita":1.091864467,
+        "family":1.146217465,
+        "health":0.617584646,
+        "freedom":0.233335808,
+        "generosity":0.069436647,
+        "government_trust":0.14609611,
+        "dystopia_residual":2.567603827
+    },
+    {
+        "name":"Latvia",
+        "value":5.849999905,
+        "gdp_per_capita":1.260748625,
+        "family":1.404714942,
+        "health":0.638566971,
+        "freedom":0.325707912,
+        "generosity":0.153074786,
+        "government_trust":0.073842727,
+        "dystopia_residual":1.993655205
+    },
+    {
+        "name":"Moldova",
+        "value":5.837999821,
+        "gdp_per_capita":0.72887063,
+        "family":1.251825571,
+        "health":0.589465201,
+        "freedom":0.240729049,
+        "generosity":0.208779126,
+        "government_trust":0.010091286,
+        "dystopia_residual":2.807808399
+    },
+    {
+        "name":"Romania",
+        "value":5.824999809,
+        "gdp_per_capita":1.217683911,
+        "family":1.15009129,
+        "health":0.685158312,
+        "freedom":0.457003742,
+        "generosity":0.133519918,
+        "government_trust":0.004387901,
+        "dystopia_residual":2.176831484
+    },
+    {
+        "name":"Bolivia",
+        "value":5.822999954,
+        "gdp_per_capita":0.833756566,
+        "family":1.227619052,
+        "health":0.47363025,
+        "freedom":0.558732927,
+        "generosity":0.225560725,
+        "government_trust":0.060477726,
+        "dystopia_residual":2.443279028
+    },
+    {
+        "name":"Turkmenistan",
+        "value":5.822000027,
+        "gdp_per_capita":1.130776763,
+        "family":1.493149161,
+        "health":0.43772608,
+        "freedom":0.418271929,
+        "generosity":0.249924988,
+        "government_trust":0.25927034,
+        "dystopia_residual":1.832909822
+    },
+    {
+        "name":"Kazakhstan",
+        "value":5.818999767,
+        "gdp_per_capita":1.28455627,
+        "family":1.384369016,
+        "health":0.606041551,
+        "freedom":0.437454283,
+        "generosity":0.201964423,
+        "government_trust":0.119282886,
+        "dystopia_residual":1.784892559
+    },
+    {
+        "name":"Slovenia",
+        "value":5.757999897,
+        "gdp_per_capita":1.341205955,
+        "family":1.452518821,
+        "health":0.790828228,
+        "freedom":0.572575808,
+        "generosity":0.242649093,
+        "government_trust":0.045128979,
+        "dystopia_residual":1.313317299
+    },
+    {
+        "name":"Peru",
+        "value":5.715000153,
+        "gdp_per_capita":1.035225272,
+        "family":1.218770385,
+        "health":0.630166113,
+        "freedom":0.450002879,
+        "generosity":0.126819715,
+        "government_trust":0.047049087,
+        "dystopia_residual":2.20726943
+    },
+    {
+        "name":"Mauritius",
+        "value":5.629000187,
+        "gdp_per_capita":1.189395547,
+        "family":1.20956099,
+        "health":0.638007462,
+        "freedom":0.491247326,
+        "generosity":0.360933751,
+        "government_trust":0.042181555,
+        "dystopia_residual":1.697583914
+    },
+    {
+        "name":"Cyprus",
+        "value":5.620999813,
+        "gdp_per_capita":1.355938077,
+        "family":1.131363273,
+        "health":0.844714701,
+        "freedom":0.355111539,
+        "generosity":0.271254301,
+        "government_trust":0.041237976,
+        "dystopia_residual":1.621249199
+    },
+    {
+        "name":"Estonia",
+        "value":5.611000061,
+        "gdp_per_capita":1.32087934,
+        "family":1.4766711,
+        "health":0.695168316,
+        "freedom":0.47913143,
+        "generosity":0.098890811,
+        "government_trust":0.183248922,
+        "dystopia_residual":1.357508659
+    },
+    {
+        "name":"Belarus",
+        "value":5.568999767,
+        "gdp_per_capita":1.15655756,
+        "family":1.444945216,
+        "health":0.637714267,
+        "freedom":0.295400262,
+        "generosity":0.155137509,
+        "government_trust":0.156313822,
+        "dystopia_residual":1.723232985
+    },
+    {
+        "name":"Libya",
+        "value":5.525000095,
+        "gdp_per_capita":1.101803064,
+        "family":1.35756433,
+        "health":0.52016902,
+        "freedom":0.46573323,
+        "generosity":0.152073666,
+        "government_trust":0.09261021,
+        "dystopia_residual":1.835011244
+    },
+    {
+        "name":"Turkey",
+        "value":5.5,
+        "gdp_per_capita":1.198274374,
+        "family":1.337753177,
+        "health":0.637605608,
+        "freedom":0.3007406,
+        "generosity":0.046693042,
+        "government_trust":0.09967158,
+        "dystopia_residual":1.879277945
+    },
+    {
+        "name":"Paraguay",
+        "value":5.493000031,
+        "gdp_per_capita":0.932537317,
+        "family":1.50728488,
+        "health":0.579250693,
+        "freedom":0.473507792,
+        "generosity":0.224150658,
+        "government_trust":0.091065913,
+        "dystopia_residual":1.68533349
+    },
+    {
+        "name":"Philippines",
+        "value":5.429999828,
+        "gdp_per_capita":0.857699215,
+        "family":1.253917575,
+        "health":0.468009055,
+        "freedom":0.585214674,
+        "generosity":0.193513423,
+        "government_trust":0.099331893,
+        "dystopia_residual":1.972604752
+    },
+    {
+        "name":"Serbia",
+        "value":5.394999981,
+        "gdp_per_capita":1.069317579,
+        "family":1.258189797,
+        "health":0.650784671,
+        "freedom":0.208715528,
+        "generosity":0.220125884,
+        "government_trust":0.040903781,
+        "dystopia_residual":1.947084427
+    },
+    {
+        "name":"Jordan",
+        "value":5.335999966,
+        "gdp_per_capita":0.991012394,
+        "family":1.239088893,
+        "health":0.604590058,
+        "freedom":0.418421149,
+        "generosity":0.17217046,
+        "government_trust":0.119803272,
+        "dystopia_residual":1.791176558
+    },
+    {
+        "name":"Hungary",
+        "value":5.323999882,
+        "gdp_per_capita":1.286011934,
+        "family":1.343133092,
+        "health":0.687763453,
+        "freedom":0.175863519,
+        "generosity":0.078401662,
+        "government_trust":0.036636937,
+        "dystopia_residual":1.716459274
+    },
+    {
+        "name":"Jamaica",
+        "value":5.31099987,
+        "gdp_per_capita":0.925579309,
+        "family":1.368218064,
+        "health":0.641022384,
+        "freedom":0.474307239,
+        "generosity":0.233818337,
+        "government_trust":0.055267781,
+        "dystopia_residual":1.612325668
+    },
+    {
+        "name":"Croatia",
+        "value":5.293000221,
+        "gdp_per_capita":1.222556233,
+        "family":0.967983007,
+        "health":0.701288521,
+        "freedom":0.255772293,
+        "generosity":0.248002976,
+        "government_trust":0.04310311,
+        "dystopia_residual":1.854492426
+    },
+    {
+        "name":"Kosovo",
+        "value":5.278999805,
+        "gdp_per_capita":0.951484382,
+        "family":1.137853503,
+        "health":0.54145205,
+        "freedom":0.260287941,
+        "generosity":0.319931448,
+        "government_trust":0.057471618,
+        "dystopia_residual":2.010540724
+    },
+    {
+        "name":"China",
+        "value":5.272999763,
+        "gdp_per_capita":1.081165791,
+        "family":1.160837412,
+        "health":0.741415501,
+        "freedom":0.472787708,
+        "generosity":0.028806841,
+        "government_trust":0.022794275,
+        "dystopia_residual":1.764938593
+    },
+    {
+        "name":"Pakistan",
+        "value":5.269000053,
+        "gdp_per_capita":0.726883531,
+        "family":0.67269069,
+        "health":0.402047783,
+        "freedom":0.235215262,
+        "generosity":0.315446019,
+        "government_trust":0.124348067,
+        "dystopia_residual":2.79248929
+    },
+    {
+        "name":"Indonesia",
+        "value":5.262000084,
+        "gdp_per_capita":0.995538592,
+        "family":1.274444699,
+        "health":0.492345721,
+        "freedom":0.443323463,
+        "generosity":0.611704588,
+        "government_trust":0.015317135,
+        "dystopia_residual":1.429476976
+    },
+    {
+        "name":"Venezuela",
+        "value":5.25,
+        "gdp_per_capita":1.128431201,
+        "family":1.431337595,
+        "health":0.617144227,
+        "freedom":0.153997123,
+        "generosity":0.06501963,
+        "government_trust":0.064491123,
+        "dystopia_residual":1.789463758
+    },
+    {
+        "name":"Montenegro",
+        "value":5.236999989,
+        "gdp_per_capita":1.121129036,
+        "family":1.238376498,
+        "health":0.667464674,
+        "freedom":0.194989055,
+        "generosity":0.197911024,
+        "government_trust":0.088174194,
+        "dystopia_residual":1.729191542
+    },
+    {
+        "name":"Morocco",
+        "value":5.235000134,
+        "gdp_per_capita":0.878114581,
+        "family":0.774864435,
+        "health":0.597710669,
+        "freedom":0.408158332,
+        "generosity":0.032209955,
+        "government_trust":0.087763183,
+        "dystopia_residual":2.456189394
+    },
+    {
+        "name":"Azerbaijan",
+        "value":5.234000206,
+        "gdp_per_capita":1.153601766,
+        "family":1.152400255,
+        "health":0.540775776,
+        "freedom":0.398155838,
+        "generosity":0.04526934,
+        "government_trust":0.180987507,
+        "dystopia_residual":1.762481689
+    },
+    {
+        "name":"Dominican Republic",
+        "value":5.230000019,
+        "gdp_per_capita":1.079373837,
+        "family":1.402416706,
+        "health":0.574873745,
+        "freedom":0.552589834,
+        "generosity":0.18696785,
+        "government_trust":0.113945253,
+        "dystopia_residual":1.31946516
+    },
+    {
+        "name":"Greece",
+        "value":5.227000237,
+        "gdp_per_capita":1.289487481,
+        "family":1.239414573,
+        "health":0.810198903,
+        "freedom":0.095731251,
+        "generosity":0,
+        "government_trust":0.043289777,
+        "dystopia_residual":1.749221563
+    },
+    {
+        "name":"Lebanon",
+        "value":5.224999905,
+        "gdp_per_capita":1.074987531,
+        "family":1.129624248,
+        "health":0.735081077,
+        "freedom":0.288515985,
+        "generosity":0.264450759,
+        "government_trust":0.03751383,
+        "dystopia_residual":1.695073843
+    },
+    {
+        "name":"Portugal",
+        "value":5.195000172,
+        "gdp_per_capita":1.315175295,
+        "family":1.367043018,
+        "health":0.795843542,
+        "freedom":0.4984653,
+        "generosity":0.095102713,
+        "government_trust":0.015869452,
+        "dystopia_residual":1.107682705
+    },
+    {
+        "name":"Bosnia and Herzegovina",
+        "value":5.18200016,
+        "gdp_per_capita":0.982409418,
+        "family":1.069335938,
+        "health":0.705186307,
+        "freedom":0.204403177,
+        "generosity":0.328867495,
+        "government_trust":0,
+        "dystopia_residual":1.892172575
+    },
+    {
+        "name":"Honduras",
+        "value":5.181000233,
+        "gdp_per_capita":0.730573118,
+        "family":1.143944979,
+        "health":0.58256948,
+        "freedom":0.34807986,
+        "generosity":0.236188874,
+        "government_trust":0.073345453,
+        "dystopia_residual":2.065811157
+    },
+    {
+        "name":"Nigeria",
+        "value":5.073999882,
+        "gdp_per_capita":0.783756256,
+        "family":1.215770483,
+        "health":0.05691573,
+        "freedom":0.394952565,
+        "generosity":0.230947196,
+        "government_trust":0.026121566,
+        "dystopia_residual":2.365390539
+    },
+    {
+        "name":"Vietnam",
+        "value":5.073999882,
+        "gdp_per_capita":0.788547575,
+        "family":1.277491331,
+        "health":0.652168989,
+        "freedom":0.571055591,
+        "generosity":0.234968051,
+        "government_trust":0.087633237,
+        "dystopia_residual":1.462318659
+    },
+    {
+        "name":"Tajikistan",
+        "value":5.040999889,
+        "gdp_per_capita":0.524713635,
+        "family":1.271463275,
+        "health":0.529235125,
+        "freedom":0.471566707,
+        "generosity":0.248997644,
+        "government_trust":0.146377146,
+        "dystopia_residual":1.84904933
+    },
+    {
+        "name":"Kyrgyzstan",
+        "value":5.004000187,
+        "gdp_per_capita":0.596220076,
+        "family":1.394238591,
+        "health":0.553457797,
+        "freedom":0.454943389,
+        "generosity":0.428580374,
+        "government_trust":0.039439179,
+        "dystopia_residual":1.536723137
+    },
+    {
+        "name":"Nepal",
+        "value":4.961999893,
+        "gdp_per_capita":0.479820192,
+        "family":1.179283261,
+        "health":0.504130781,
+        "freedom":0.440305948,
+        "generosity":0.394096166,
+        "government_trust":0.072975546,
+        "dystopia_residual":1.891241074
+    },
+    {
+        "name":"Mongolia",
+        "value":4.954999924,
+        "gdp_per_capita":1.027235866,
+        "family":1.493011236,
+        "health":0.557783484,
+        "freedom":0.394143969,
+        "generosity":0.33846423,
+        "government_trust":0.032902289,
+        "dystopia_residual":1.111292362
+    },
+    {
+        "name":"South Africa",
+        "value":4.828999996,
+        "gdp_per_capita":1.054698706,
+        "family":1.384788632,
+        "health":0.18708007,
+        "freedom":0.479246736,
+        "generosity":0.13936238,
+        "government_trust":0.072509497,
+        "dystopia_residual":1.510908604
+    },
+    {
+        "name":"Tunisia",
+        "value":4.804999828,
+        "gdp_per_capita":1.007265806,
+        "family":0.86835146,
+        "health":0.613212049,
+        "freedom":0.28968069,
+        "generosity":0.049693357,
+        "government_trust":0.086723149,
+        "dystopia_residual":1.89025116
+    },
+    {
+        "name":"Egypt",
+        "value":4.735000134,
+        "gdp_per_capita":0.989701807,
+        "family":0.997471392,
+        "health":0.520187259,
+        "freedom":0.282110155,
+        "generosity":0.128631443,
+        "government_trust":0.114381365,
+        "dystopia_residual":1.702161074
+    },
+    {
+        "name":"Bulgaria",
+        "value":4.714000225,
+        "gdp_per_capita":1.161459088,
+        "family":1.434379458,
+        "health":0.70821768,
+        "freedom":0.289231718,
+        "generosity":0.113177694,
+        "government_trust":0.011051531,
+        "dystopia_residual":0.996139288
+    },
+    {
+        "name":"Sierra Leone",
+        "value":4.709000111,
+        "gdp_per_capita":0.368420929,
+        "family":0.984136045,
+        "health":0.005564754,
+        "freedom":0.318697691,
+        "generosity":0.293040901,
+        "government_trust":0.071095176,
+        "dystopia_residual":2.668459892
+    },
+    {
+        "name":"Cameroon",
+        "value":4.695000172,
+        "gdp_per_capita":0.564305365,
+        "family":0.946018219,
+        "health":0.132892117,
+        "freedom":0.430388749,
+        "generosity":0.236298457,
+        "government_trust":0.051306631,
+        "dystopia_residual":2.333645582
+    },
+    {
+        "name":"Iran",
+        "value":4.691999912,
+        "gdp_per_capita":1.156873107,
+        "family":0.711551249,
+        "health":0.639333189,
+        "freedom":0.249322608,
+        "generosity":0.387242913,
+        "government_trust":0.048761073,
+        "dystopia_residual":1.498734951
+    },
+    {
+        "name":"Albania",
+        "value":4.644000053,
+        "gdp_per_capita":0.996192753,
+        "family":0.803685248,
+        "health":0.731159747,
+        "freedom":0.381498635,
+        "generosity":0.201312944,
+        "government_trust":0.039864216,
+        "dystopia_residual":1.490441561
+    },
+    {
+        "name":"Bangladesh",
+        "value":4.607999802,
+        "gdp_per_capita":0.586682975,
+        "family":0.735131741,
+        "health":0.533241034,
+        "freedom":0.478356659,
+        "generosity":0.172255352,
+        "government_trust":0.123717859,
+        "dystopia_residual":1.978736162
+    },
+    {
+        "name":"Kenya",
+        "value":4.552999973,
+        "gdp_per_capita":0.560479462,
+        "family":1.067950726,
+        "health":0.30998835,
+        "freedom":0.452763766,
+        "generosity":0.444860309,
+        "government_trust":0.064641319,
+        "dystopia_residual":1.651902199
+    },
+    {
+        "name":"Myanmar",
+        "value":4.545000076,
+        "gdp_per_capita":0.36711055,
+        "family":1.123235941,
+        "health":0.397522569,
+        "freedom":0.514492035,
+        "generosity":0.838075161,
+        "government_trust":0.188816205,
+        "dystopia_residual":1.115290403
+    },
+    {
+        "name":"Senegal",
+        "value":4.534999847,
+        "gdp_per_capita":0.479309022,
+        "family":1.179691911,
+        "health":0.409362853,
+        "freedom":0.377922267,
+        "generosity":0.183468893,
+        "government_trust":0.115460448,
+        "dystopia_residual":1.789646149
+    },
+    {
+        "name":"Zambia",
+        "value":4.513999939,
+        "gdp_per_capita":0.636406779,
+        "family":1.003187299,
+        "health":0.257835895,
+        "freedom":0.461603492,
+        "generosity":0.249580145,
+        "government_trust":0.07821355,
+        "dystopia_residual":1.826705456
+    },
+    {
+        "name":"Iraq",
+        "value":4.497000217,
+        "gdp_per_capita":1.102710485,
+        "family":0.978613198,
+        "health":0.50118047,
+        "freedom":0.288555533,
+        "generosity":0.199637264,
+        "government_trust":0.107215755,
+        "dystopia_residual":1.318907261
+    },
+    {
+        "name":"Gabon",
+        "value":4.465000153,
+        "gdp_per_capita":1.198210239,
+        "family":1.155620217,
+        "health":0.356578588,
+        "freedom":0.312328577,
+        "generosity":0.043785378,
+        "government_trust":0.076046787,
+        "dystopia_residual":1.322916269
+    },
+    {
+        "name":"Ethiopia",
+        "value":4.460000038,
+        "gdp_per_capita":0.339233845,
+        "family":0.864669204,
+        "health":0.353409708,
+        "freedom":0.408842742,
+        "generosity":0.31265074,
+        "government_trust":0.165455714,
+        "dystopia_residual":2.015743732
+    },
+    {
+        "name":"Sri Lanka",
+        "value":4.440000057,
+        "gdp_per_capita":1.009850144,
+        "family":1.259976387,
+        "health":0.625130832,
+        "freedom":0.561213255,
+        "generosity":0.490863562,
+        "government_trust":0.073653966,
+        "dystopia_residual":0.419389248
+    },
+    {
+        "name":"Armenia",
+        "value":4.375999928,
+        "gdp_per_capita":0.900596738,
+        "family":1.007483721,
+        "health":0.637524426,
+        "freedom":0.198303267,
+        "generosity":0.083488092,
+        "government_trust":0.026674422,
+        "dystopia_residual":1.521499157
+    },
+    {
+        "name":"India",
+        "value":4.315000057,
+        "gdp_per_capita":0.792221248,
+        "family":0.754372597,
+        "health":0.455427617,
+        "freedom":0.469987005,
+        "generosity":0.231538489,
+        "government_trust":0.092226885,
+        "dystopia_residual":1.519117117
+    },
+    {
+        "name":"Mauritania",
+        "value":4.291999817,
+        "gdp_per_capita":0.648457289,
+        "family":1.27203083,
+        "health":0.28534928,
+        "freedom":0.096098043,
+        "generosity":0.201870024,
+        "government_trust":0.136957005,
+        "dystopia_residual":1.651637316
+    },
+    {
+        "name":"Georgia",
+        "value":4.285999775,
+        "gdp_per_capita":0.950612664,
+        "family":0.570614934,
+        "health":0.649546981,
+        "freedom":0.309410036,
+        "generosity":0.054008815,
+        "government_trust":0.251666635,
+        "dystopia_residual":1.500137806
+    },
+    {
+        "name":"Mali",
+        "value":4.190000057,
+        "gdp_per_capita":0.476180494,
+        "family":1.281473398,
+        "health":0.169365674,
+        "freedom":0.306613743,
+        "generosity":0.183354199,
+        "government_trust":0.104970247,
+        "dystopia_residual":1.668190956
+    },
+    {
+        "name":"Cambodia",
+        "value":4.168000221,
+        "gdp_per_capita":0.601765096,
+        "family":1.006238341,
+        "health":0.429783404,
+        "freedom":0.633375823,
+        "generosity":0.385922968,
+        "government_trust":0.068105951,
+        "dystopia_residual":1.042941093
+    },
+    {
+        "name":"Ghana",
+        "value":4.119999886,
+        "gdp_per_capita":0.667224824,
+        "family":0.873664737,
+        "health":0.295637727,
+        "freedom":0.423026294,
+        "generosity":0.256923944,
+        "government_trust":0.02533637,
+        "dystopia_residual":1.577867508
+    },
+    {
+        "name":"Ukraine",
+        "value":4.096000195,
+        "gdp_per_capita":0.894651949,
+        "family":1.394537568,
+        "health":0.575903952,
+        "freedom":0.122974776,
+        "generosity":0.270061463,
+        "government_trust":0.023029471,
+        "dystopia_residual":0.814382315
+    },
+    {
+        "name":"Uganda",
+        "value":4.080999851,
+        "gdp_per_capita":0.381430715,
+        "family":1.129827738,
+        "health":0.217632607,
+        "freedom":0.443185955,
+        "generosity":0.325766057,
+        "government_trust":0.057069719,
+        "dystopia_residual":1.526362658
+    },
+    {
+        "name":"Burkina Faso",
+        "value":4.032000065,
+        "gdp_per_capita":0.350227714,
+        "family":1.043280005,
+        "health":0.215844259,
+        "freedom":0.324367851,
+        "generosity":0.250864685,
+        "government_trust":0.120328106,
+        "dystopia_residual":1.727212906
+    },
+    {
+        "name":"Niger",
+        "value":4.027999878,
+        "gdp_per_capita":0.161925331,
+        "family":0.993025005,
+        "health":0.268505007,
+        "freedom":0.363658696,
+        "generosity":0.228673846,
+        "government_trust":0.138572946,
+        "dystopia_residual":1.873983383
+    },
+    {
+        "name":"Malawi",
+        "value":3.970000029,
+        "gdp_per_capita":0.233442038,
+        "family":0.512568831,
+        "health":0.315089583,
+        "freedom":0.466914654,
+        "generosity":0.28717047,
+        "government_trust":0.072711654,
+        "dystopia_residual":2.081786156
+    },
+    {
+        "name":"Chad",
+        "value":3.936000109,
+        "gdp_per_capita":0.438012987,
+        "family":0.953855872,
+        "health":0.041134715,
+        "freedom":0.162342027,
+        "generosity":0.21611385,
+        "government_trust":0.053581882,
+        "dystopia_residual":2.071238041
+    },
+    {
+        "name":"Zimbabwe",
+        "value":3.875,
+        "gdp_per_capita":0.375846535,
+        "family":1.083095908,
+        "health":0.196763754,
+        "freedom":0.336384207,
+        "generosity":0.189143494,
+        "government_trust":0.095375381,
+        "dystopia_residual":1.597970247
+    },
+    {
+        "name":"Afghanistan",
+        "value":3.79399991,
+        "gdp_per_capita":0.401477218,
+        "family":0.581543326,
+        "health":0.180746779,
+        "freedom":0.10617952,
+        "generosity":0.311870933,
+        "government_trust":0.06115783,
+        "dystopia_residual":2.150801182
+    },
+    {
+        "name":"Botswana",
+        "value":3.766000032,
+        "gdp_per_capita":1.122094154,
+        "family":1.221554995,
+        "health":0.341755509,
+        "freedom":0.505196333,
+        "generosity":0.099348448,
+        "government_trust":0.098583199,
+        "dystopia_residual":0.377913713
+    },
+    {
+        "name":"Benin",
+        "value":3.657000065,
+        "gdp_per_capita":0.431085408,
+        "family":0.435299844,
+        "health":0.209930211,
+        "freedom":0.425962776,
+        "generosity":0.207948461,
+        "government_trust":0.060929015,
+        "dystopia_residual":1.885630965
+    },
+    {
+        "name":"Madagascar",
+        "value":3.644000053,
+        "gdp_per_capita":0.305808693,
+        "family":0.913020372,
+        "health":0.375223309,
+        "freedom":0.189196765,
+        "generosity":0.20873253,
+        "government_trust":0.067231975,
+        "dystopia_residual":1.584612608
+    },
+    {
+        "name":"Haiti",
+        "value":3.602999926,
+        "gdp_per_capita":0.368610263,
+        "family":0.640449822,
+        "health":0.27732113,
+        "freedom":0.030369857,
+        "generosity":0.489203781,
+        "government_trust":0.09987215,
+        "dystopia_residual":1.697167635
+    },
+    {
+        "name":"Yemen",
+        "value":3.592999935,
+        "gdp_per_capita":0.591683447,
+        "family":0.935382247,
+        "health":0.310080916,
+        "freedom":0.249463722,
+        "generosity":0.104125209,
+        "government_trust":0.056767423,
+        "dystopia_residual":1.345600605
+    },
+    {
+        "name":"Liberia",
+        "value":3.532999992,
+        "gdp_per_capita":0.119041793,
+        "family":0.872117937,
+        "health":0.229918197,
+        "freedom":0.332881182,
+        "generosity":0.266549885,
+        "government_trust":0.038948249,
+        "dystopia_residual":1.673285961
+    },
+    {
+        "name":"Guinea",
+        "value":3.506999969,
+        "gdp_per_capita":0.24454993,
+        "family":0.791244686,
+        "health":0.194129139,
+        "freedom":0.348587513,
+        "generosity":0.264815092,
+        "government_trust":0.110937618,
+        "dystopia_residual":1.552311897
+    },
+    {
+        "name":"Togo",
+        "value":3.494999886,
+        "gdp_per_capita":0.305444717,
+        "family":0.43188253,
+        "health":0.247105569,
+        "freedom":0.380426139,
+        "generosity":0.196896151,
+        "government_trust":0.095665015,
+        "dystopia_residual":1.837229252
+    },
+    {
+        "name":"Rwanda",
+        "value":3.470999956,
+        "gdp_per_capita":0.368745893,
+        "family":0.945707023,
+        "health":0.326424807,
+        "freedom":0.581843853,
+        "generosity":0.252756029,
+        "government_trust":0.455220014,
+        "dystopia_residual":0.540061235
+    },
+    {
+        "name":"Tanzania",
+        "value":3.348999977,
+        "gdp_per_capita":0.511135876,
+        "family":1.041989803,
+        "health":0.364509284,
+        "freedom":0.390017778,
+        "generosity":0.354256362,
+        "government_trust":0.066035107,
+        "dystopia_residual":0.621130466
+    },
+    {
+        "name":"Burundi",
+        "value":2.904999971,
+        "gdp_per_capita":0.091622569,
+        "family":0.629793584,
+        "health":0.151610792,
+        "freedom":0.059900753,
+        "generosity":0.204435185,
+        "government_trust":0.084147945,
+        "dystopia_residual":1.683024168
+    }
+]
+    //var mapChart = echarts.init(document.getElementById("WorldhappinessMap"));
+    var dom = document.getElementById("World happiness Map");
+    var dom2 = document.getElementById("bar");
+	var dom3 = document.getElementById("bar2");
+    var mapChart = echarts.init(dom);
+    var barChart = echarts.init(dom2);
+	var barChart2 = echarts.init(dom3);
+    WorldhappinessMap();
+
+    function WorldhappinessMap(){
+        // 开启加载loading的动画
+        mapChart.showLoading();
+        $.get('geo/world.json', function (worldJson) {
+            // 隐藏loading的动画
+            mapChart.hideLoading();
+            option = {
+                title : {
+                    text: 'World Happiness (2015)',
+                    x:'center',
+                    y:'top'
+                },
+                tooltip : {
+                    trigger: 'item',
+                    // 浮层显示的延迟
+                    showDelay: 0,
+                    // 提示框浮层的移动动画过渡时间
+                    transitionDuration: 0.2,
+                    // 按要求的格式显示提示框
+                    formatter : function (params) {
+                        var value = (params.value + '').split('.');
+                        value = value[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                + '.' + value[1];
+                        var gdp_per_capita = (params.data.gdp_per_capita + '').split('.');
+                        gdp_per_capita = gdp_per_capita[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                 + '.' + gdp_per_capita[1];
+                        var family = (params.data.family + '').split('.');
+                        family = family[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                + '.' + family[1];
+                        var health = (params.data.health + '').split('.');
+                        health = health[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                 + '.' + health[1];
+                        var freedom = (params.data.freedom + '').split('.');
+                        freedom = freedom[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                 + '.' + freedom[1];
+                        var generosity = (params.data.generosity + '').split('.');
+                        generosity = generosity[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                 + '.' + generosity[1];
+                        var government_trust = (params.data.government_trust + '').split('.');
+                        government_trust = government_trust[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                 + '.' + government_trust[1];
+                        var dystopia_residual = (params.data.dystopia_residual + '').split('.');
+                        dystopia_residual = dystopia_residual[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,')
+                                 + '.' + dystopia_residual[1];
+                        var res = params.seriesName + '<br/>' + params.name + ' : ' + value + '<br/n>gdp_per_capita : ' + gdp_per_capita + '<br/n>family : '+ family +'<br/n>health : '+ health +'<br/n>freedom : '+ freedom + '<br/n>generosity : '+ generosity +'<br/n>government_trust : '+ government_trust +'<br/n>dystopia_residual : '+ dystopia_residual;
+                        return res;
+                    }
+                },
+                toolbox: {
+                    show : true,
+                    orient : 'vertical',
+                    x: 'right',
+                    y: 'center',
+                    feature : {
+                        mark : {show: true},
+                        dataView : {show: true, readOnly: false},
+                        restore : {show: true},
+                        saveAsImage : {show: true}
+                    }
+                },
+                dataRange: {
+                    min: 2.9,
+                    max: 7.6,
+                    text:['High','Low'],
+                    realtime: false,
+                    calculable : true,
+                    color: ['red','yellow','lightskyblue']
+                },
+                series : [
+                    {
+                        name: 'World Happiness (2015)',
+                        type: 'map',
+                        mapType: 'world',
+                        roam: false,
+                        mapLocation: {
+                            y : 60
+                        },
+                        itemStyle:{
+                            emphasis:{label:{show:true}}
+                        },
+                        data: data
+                    }
+                ]
+            };
+
+            mapChart.setOption(option);
+
+            // 关键点：添加点击事件（可选项 'click'、'dblclick'、'mousedown'、'mousemove'、'mouseup'、'mouseover'、'mouseout'、'globalout'、'contextmenu' ）
+            mapChart.on('click', function (params) {
+            // params为点击事件的参数，里面的内容可以打印出来查看
+            console.log(params)
+                pie(params)
+				pie2(params)
+            });
+        });
+
+    }
+	
+	function pie(params) {
+	        // 拿到世界地图上的某个国家的名字
+	        var countryName = params.name
+	        // 拿到对应的人口数量
+	        var countrygdp_per_capita = params.data.gdp_per_capita
+	        var countryfamily = params.data.family
+	        var countryhealth = params.data.health
+	        var countryfreedom = params.data.freedom
+	        var countrygenerosity = params.data.generosity
+	        var countrygovernment_trust = params.data.government_trust
+	        var countrydystopia_residual = params.data.dystopia_residual
+	        // 指定配置和数据
+	        var option = {
+	            title: {
+	                
+	                subtext: countryName,
+	                left: 'center'
+	            },
+	            // 触发器
+	            tooltip: {
+	                // 可选项：axis：显示显示该列下所有坐标轴所对应的数据，item：显示该点的数据
+	                trigger: 'item',
+	                formatter: '{a} <br/>{b} : {c} ({d}%)'
+	            },
+	            legend: {
+	                // 设置图例的位置为垂直，可选项：horizontal，水平（默认）
+	                orient: 'vertical',
+	                left: 'left',
+	                data: ['gdp_per_capita', 'family','health','freedom','generosity','government_trust','dystopia_residual']
+	            },
+	            series: [
+	                {
+	                   
+	                    type: 'pie',
+	                    // 设置饼状图大小
+	                    radius: '60%',
+	                    // 设置饼状图位置，第一个百分数调水平位置，第二个百分数调垂直位置
+	                    center: ['60%', '50%'],
+	                    data: [
+	                        {value: countrygdp_per_capita, name: 'gdp_per_capita'},
+	                        {value: countryfamily, name: 'family'},
+	                        {value: countryhealth, name: 'health'},
+	                        {value: countryfreedom, name: 'freedom'},
+	                        {value: countrygenerosity, name: 'generosity'},
+	                        {value: countrygovernment_trust, name: 'government_trust'},
+	                        {value: countrydystopia_residual, name: 'dystopia_residual'}
+	                    ],
+	                    // 鼠标移入动态的时候显示的默认样式
+	                    emphasis: {
+	                        itemStyle: {
+	                            // 阴影模糊系数
+	                            shadowBlur: 10,
+	                            // 属性设置或返回形状与阴影的水平距离,或称X轴偏移量
+	                            shadowOffsetX: 0,
+	                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+	                        }
+	                    }
+	                }
+	            ]
+	        };
+	        // 把配置给实例对象
+	        barChart.setOption(option)
+	
+	    }
+	
+	function pie2(params){
+		// var value = parseInt(params.value);
+		var value = params.value;
+		
+		var ROOT_PATH = 'https://i.postimg.cc';
+		const emoji = {
+			desperate: ROOT_PATH + '/qqVxLF8v/1.png',
+			sorrowful: ROOT_PATH + '/1zbGmd7r/2.png',
+			fine: ROOT_PATH + '/ZY88mV86/3.png',
+			happy: ROOT_PATH + '/Y9qHSX4j/4.png',
+			overjoyed: ROOT_PATH + '/G3fCcxbh/5.png',
+		};
+		if (value > 6.758) {
+			var option = {
+				graphic:{
+					elements: [{
+						type: 'image',
+						style: {
+							image: emoji.overjoyed,
+							width: 150,
+							height: 150
+						},
+						left: 'center',
+						top: 'center'
+					}]
+				},
+			};
+		}
+		else if (value > 5.708) {
+			var option = {
+				graphic:{
+					elements: [{
+						type: 'image',
+						style: {
+							image: emoji.happy,
+							width: 150,
+							height: 150
+						},
+						left: 'center',
+						top: 'center'
+					}]
+				},
+			};
+		}
+		else if (value > 4.568) {
+			var option = {
+				graphic:{
+					elements: [{
+						type: 'image',
+						style: {
+							image: emoji.fine,
+							width: 150,
+							height: 150
+						},
+						left: 'center',
+						top: 'center'
+					}]
+				},
+			};
+		}
+		else if (value > 3.608) {
+			var option = {
+				graphic:{
+					elements: [{
+						type: 'image',
+						style: {
+							image: emoji.sorrowful,
+							width: 150,
+							height: 150
+						},
+						left: 'center',
+						top: 'center'
+					}]
+				},
+			};
+		}
+		else {//2.567~3.607
+			var option = {
+				graphic:{
+					elements: [{
+						type: 'image',
+						style: {
+							image: emoji.desperate,
+							width: 150,
+							height: 150
+						},
+						left: 'center',
+						top: 'center'
+					}]
+				},
+			};
+		}
+		barChart2.setOption(option)
+	}
+</script>
+
+</body>
+</html>
